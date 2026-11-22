@@ -95,8 +95,10 @@ const total = r2(T.expenses.reduce((s,e)=>s+e.amount,0));
 const perHead = total / P.length;
 const paid = {}, share = {};
 P.forEach(p=>{paid[p]=0;share[p]=0});
+const payMap = e => e.paid || {[e.paidBy||T.defaultPayer]: e.amount};
 T.expenses.forEach(e=>{
-  paid[e.paidBy] += e.amount;
+  if(e.settled) return;
+  Object.entries(payMap(e)).forEach(([n,a])=>paid[n]+=a);
   const among = e.among && e.among.length ? e.among : P;
   among.forEach(p=>share[p]+=e.amount/among.length);
 });
@@ -132,7 +134,7 @@ $('s-summary').innerHTML = `
     <div class="mute" style="margin-bottom:6px">${d.date||''}</div>
     <div class="bar"><i style="width:${maxDay?dayTotal(d.n)/maxDay*100:0}%"></i></div></div>`).join('')}
   </div>
-  <h2>Who paid how much</h2>
+  <h2>Money paid out by</h2>
   <div class="card">${[...P].sort((a,b)=>paid[b]-paid[a]).map(p=>`
     <div class="dayrow"><div class="row"><b>${p}</b><span class="amt">${fmt(paid[p])}</span></div>
     <div class="bar"><i style="width:${total?paid[p]/total*100:0}%"></i></div></div>`).join('')}
@@ -141,11 +143,13 @@ $('s-summary').innerHTML = `
 $('s-days').innerHTML = T.days.map((d,i)=>{
   const list = T.expenses.filter(e=>e.day===d.n);
   return `<details ${i===0?'open':''}>
-    <summary><div><div class="t">${d.label}</div><div class="mute">${d.date||''} · ${list.length} spends</div></div>
+    <summary><div><div class="t">${d.label}</div><div class="mute">${d.date?d.date+' · ':''}${list.length} spends</div></div>
     <div class="amt" style="margin-left:auto">${fmt(dayTotal(d.n))}</div></summary>
+    ${list.length?'':'<div class="exp mute">No spends added yet</div>'}
     ${list.map(e=>`<div class="exp"><div class="row"><span class="it">${e.item}</span><span class="amt">${fmt(e.amount)}</span></div>
-      <span class="chip">Paid by ${e.paidBy}</span>
-      ${e.among&&e.among.length?`<span class="chip s">Shared: ${e.among.join(', ')}</span>`:''}</div>`).join('')}
+      ${e.settled?`<span class="chip">Settled</span>`:Object.entries(payMap(e)).map(([n,a])=>`<span class="chip">Paid by ${n}${e.paid?' '+fmt(a):''}</span>`).join(' ')}
+      ${e.among&&e.among.length&&!e.settled?`<span class="chip s">${e.among.length} people</span>`:''}
+      ${e.note?`<div class="mute" style="margin-top:6px">${e.note}</div>`:''}</div>`).join('')}
   </details>`}).join('');
 
 $('s-people').innerHTML = P.map(p=>{
