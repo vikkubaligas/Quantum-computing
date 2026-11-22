@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>Trip Accounts</title>
+<style>
+:root{
+  --bg:#f3f6f6;--card:#fff;--ink:#14201f;--mute:#5d6f6d;--line:#e3eae9;
+  --pri:#0f766e;--pri-soft:#d5f0ec;--pay:#c2410c;--pay-soft:#ffe9dd;--get:#15803d;--get-soft:#dcf5e4;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0c1413;--card:#15211f;--ink:#e8f1f0;--mute:#93a8a5;--line:#243532;
+  --pri:#2dd4bf;--pri-soft:#12403b;--pay:#fb923c;--pay-soft:#3a2312;--get:#4ade80;--get-soft:#12341f;}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:84px}
+header{background:var(--pri);color:#fff;padding:22px 16px 56px;}
+@media (prefers-color-scheme:dark){header{color:#06201d}}
+header h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;opacity:.85;font-size:14px}
+main{padding:0 16px;max-width:640px;margin:-40px auto 0}
+.card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat .l{font-size:13px;color:var(--mute)}
+.stat .v{font-size:26px;font-weight:700;margin-top:2px}
+.stat.big{grid-column:1/-1}
+.stat.big .v{font-size:34px;color:var(--pri)}
+h2{font-size:15px;margin:18px 4px 8px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--pri);border-radius:6px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.mute{color:var(--mute);font-size:13px}
+.amt{font-weight:700;white-space:nowrap}
+.dayrow{margin-bottom:14px}.dayrow:last-child{margin-bottom:0}
+details{background:var(--card);border-radius:16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+summary{list-style:none;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary .t{font-weight:700}
+summary::after{content:"›";font-size:22px;color:var(--mute);margin-left:10px;transition:transform .2s}
+details[open] summary::after{transform:rotate(90deg)}
+.exp{padding:12px 16px;border-top:1px solid var(--line)}
+.exp .it{font-weight:600}
+.chip{display:inline-block;background:var(--pri-soft);color:var(--pri);border-radius:20px;padding:2px 10px;font-size:13px;font-weight:600;margin-top:4px}
+.chip.s{background:var(--line);color:var(--mute);font-weight:500}
+.av{width:38px;height:38px;border-radius:50%;background:var(--pri-soft);color:var(--pri);display:grid;place-items:center;font-weight:700;flex:none}
+.person .nm{font-weight:700}
+.badge{border-radius:20px;padding:4px 12px;font-weight:700;font-size:14px;white-space:nowrap}
+.badge.pay{background:var(--pay-soft);color:var(--pay)}
+.badge.get{background:var(--get-soft);color:var(--get)}
+.badge.even{background:var(--line);color:var(--mute)}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;font-size:14px}
+.mini b{display:block;font-size:16px}
+.tx{display:flex;align-items:center;gap:10px}
+.tx .who{flex:1;min-width:0}
+.tx .who b{display:block}
+.arrow{color:var(--mute);font-size:20px}
+.tx .amt{color:var(--pay);font-size:18px}
+.group h3{margin:0 0 10px;font-size:17px}
+.pay-line{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.pay-line:first-of-type{border-top:0}
+.pay-line .amt{color:var(--pay)}
+.recv{color:var(--get)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;background:none;border:0;padding:10px 0 9px;color:var(--mute);font:600 12px system-ui;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:20px}
+nav button.on{color:var(--pri)}
+section{display:none}section.on{display:block}
+</style>
+</head>
+<body>
+<header><h1 id="title"></h1><p id="sub"></p></header>
+<main>
+  <section id="s-summary" class="on"></section>
+  <section id="s-days"></section>
+  <section id="s-people"></section>
+  <section id="s-settle"></section>
+</main>
+<nav>
+  <button data-t="summary" class="on"><span>📊</span>Summary</button>
+  <button data-t="days"><span>📅</span>Days</button>
+  <button data-t="people"><span>👥</span>People</button>
+  <button data-t="settle"><span>💸</span>Who pays</button>
+</nav>
+<script src="data.js"></script>
+<script>
+const T = window.TRIP, C = T.currency, P = T.people;
+const r2 = x => Math.round(x*100)/100;
+const fmt = x => C + r2(x).toLocaleString('en-IN',{minimumFractionDigits:(r2(x)%1?2:0),maximumFractionDigits:2});
+const $ = id => document.getElementById(id);
+
+// ---- calculations ----
+const total = r2(T.expenses.reduce((s,e)=>s+e.amount,0));
+const perHead = total / P.length;
+const paid = {}, share = {};
+P.forEach(p=>{paid[p]=0;share[p]=0});
+T.expenses.forEach(e=>{
+  paid[e.paidBy] += e.amount;
+  const among = e.among && e.among.length ? e.among : P;
+  among.forEach(p=>share[p]+=e.amount/among.length);
+});
+const bal = {}; P.forEach(p=>bal[p]=r2(paid[p]-share[p])); // + gets, - pays
+// minimal settlement
+const debt = P.filter(p=>bal[p]<-0.005).map(p=>({p,a:-bal[p]})).sort((a,b)=>b.a-a.a);
+const cred = P.filter(p=>bal[p]>0.005).map(p=>({p,a:bal[p]})).sort((a,b)=>b.a-a.a);
+const tx = [];
+for(let i=0,j=0;i<debt.length&&j<cred.length;){
+  const m = Math.min(debt[i].a,cred[j].a);
+  if(m>0.005) tx.push({from:debt[i].p,to:cred[j].p,a:r2(m)});
+  debt[i].a-=m; cred[j].a-=m;
+  if(debt[i].a<0.005)i++; if(cred[j].a<0.005)j++;
+}
+const dayTotal = n => T.expenses.filter(e=>e.day===n).reduce((s,e)=>s+e.amount,0);
+const ini = n => n.trim()[0].toUpperCase();
+
+// ---- render ----
+$('title').textContent = T.title;
+$('sub').textContent = `${P.length} travellers · ${T.days.length} days`;
+document.title = T.title;
+
+const maxDay = Math.max(...T.days.map(d=>dayTotal(d.n)));
+$('s-summary').innerHTML = `
+  <div class="card hero">
+    <div class="stat big"><div class="l">Total trip expenditure</div><div class="v">${fmt(total)}</div></div>
+    <div class="stat"><div class="l">Per head</div><div class="v">${fmt(perHead)}</div></div>
+    <div class="stat"><div class="l">Travellers</div><div class="v">${P.length}</div></div>
+  </div>
+  <h2>Spend by day</h2>
+  <div class="card">${T.days.map(d=>`
+    <div class="dayrow"><div class="row"><b>${d.label}</b><span class="amt">${fmt(dayTotal(d.n))}</span></div>
+    <div class="mute" style="margin-bottom:6px">${d.date||''}</div>
+    <div class="bar"><i style="width:${maxDay?dayTotal(d.n)/maxDay*100:0}%"></i></div></div>`).join('')}
+  </div>
+  <h2>Who paid how much</h2>
+  <div class="card">${[...P].sort((a,b)=>paid[b]-paid[a]).map(p=>`
+    <div class="dayrow"><div class="row"><b>${p}</b><span class="amt">${fmt(paid[p])}</span></div>
+    <div class="bar"><i style="width:${total?paid[p]/total*100:0}%"></i></div></div>`).join('')}
+  </div>`;
+
+$('s-days').innerHTML = T.days.map((d,i)=>{
+  const list = T.expenses.filter(e=>e.day===d.n);
+  return `<details ${i===0?'open':''}>
+    <summary><div><div class="t">${d.label}</div><div class="mute">${d.date||''} · ${list.length} spends</div></div>
+    <div class="amt" style="margin-left:auto">${fmt(dayTotal(d.n))}</div></summary>
+    ${list.map(e=>`<div class="exp"><div class="row"><span class="it">${e.item}</span><span class="amt">${fmt(e.amount)}</span></div>
+      <span class="chip">Paid by ${e.paidBy}</span>
+      ${e.among&&e.among.length?`<span class="chip s">Shared: ${e.among.join(', ')}</span>`:''}</div>`).join('')}
+  </details>`}).join('');
+
+$('s-people').innerHTML = P.map(p=>{
+  const b = bal[p], cls = b>0.005?'get':b<-0.005?'pay':'even';
+  const txt = b>0.005?`Gets ${fmt(b)}`:b<-0.005?`Pays ${fmt(-b)}`:'All settled';
+  return `<div class="card person"><div class="row"><div class="row" style="justify-content:flex-start"><div class="av">${ini(p)}</div><span class="nm">${p}</span></div>
+    <span class="badge ${cls}">${txt}</span></div>
+    <div class="mini"><div class="mute">Paid<b>${fmt(paid[p])}</b></div><div class="mute">Share of expenses<b>${fmt(share[p])}</b></div></div></div>`}).join('');
+
+const payers = [...new Set(tx.map(t=>t.from))];
+$('s-settle').innerHTML = `
+  <div class="card"><div class="row"><div><div class="mute">Per head</div><div class="stat"><div class="v">${fmt(perHead)}</div></div></div>
+  <div style="text-align:right"><div class="mute">Total</div><div class="stat"><div class="v">${fmt(total)}</div></div></div></div></div>
+  <h2>Who pays whom</h2>
+  ${payers.map(f=>{const mine=tx.filter(t=>t.from===f);return `<div class="card group"><div class="row"><div class="row" style="justify-content:flex-start"><div class="av">${ini(f)}</div><h3 style="margin:0">${f}</h3></div>
+    <span class="badge pay">Pays ${fmt(mine.reduce((s,t)=>s+t.a,0))}</span></div>
+    <div style="margin-top:10px">${mine.map(t=>`<div class="pay-line"><span>→ <b>${t.to}</b></span><span class="amt">${fmt(t.a)}</span></div>`).join('')}</div></div>`}).join('')}
+  <h2>Who receives</h2>
+  <div class="card">${cred.map(c=>`<div class="pay-line"><b>${c.p}</b><span class="amt recv">${fmt(bal[c.p])}</span></div>`).join('')}</div>`;
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button,section').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); $('s-'+b.dataset.t).classList.add('on'); scrollTo(0,0);
+});
+</script>
+</body>
+</html>
