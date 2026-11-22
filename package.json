@@ -1,0 +1,8 @@
+{
+  "name": "trip-accounts",
+  "version": "1.0.0",
+  "description": "Trip expense viewer (static site served by a tiny Node server)",
+  "private": true,
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
