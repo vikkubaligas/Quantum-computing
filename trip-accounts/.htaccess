@@ -1,0 +1,7 @@
+# Always serve the latest data after an update
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+DirectoryIndex index.html

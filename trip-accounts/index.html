@@ -92,7 +92,8 @@ const $ = id => document.getElementById(id);
 
 // ---- calculations ----
 const total = r2(T.expenses.reduce((s,e)=>s+e.amount,0));
-const perHead = total / P.length;
+const tripSpend = r2(T.expenses.filter(e=>!e.settled).reduce((s,e)=>s+e.amount,0));
+const perHead = tripSpend / P.length;
 const paid = {}, share = {};
 P.forEach(p=>{paid[p]=0;share[p]=0});
 const payMap = e => e.paid || {[e.paidBy||T.defaultPayer]: e.amount};
@@ -125,8 +126,8 @@ const maxDay = Math.max(...T.days.map(d=>dayTotal(d.n)));
 $('s-summary').innerHTML = `
   <div class="card hero">
     <div class="stat big"><div class="l">Total trip expenditure</div><div class="v">${fmt(total)}</div></div>
-    <div class="stat"><div class="l">Per head</div><div class="v">${fmt(perHead)}</div></div>
-    <div class="stat"><div class="l">Travellers</div><div class="v">${P.length}</div></div>
+    <div class="stat"><div class="l">Trip spends (excl. flights)</div><div class="v">${fmt(tripSpend)}</div></div>
+    <div class="stat"><div class="l">Per head (excl. flights)</div><div class="v">${fmt(perHead)}</div></div>
   </div>
   <h2>Spend by day</h2>
   <div class="card">${T.days.map(d=>`
@@ -155,14 +156,14 @@ $('s-days').innerHTML = T.days.map((d,i)=>{
 $('s-people').innerHTML = P.map(p=>{
   const b = bal[p], cls = b>0.005?'get':b<-0.005?'pay':'even';
   const txt = b>0.005?`Gets ${fmt(b)}`:b<-0.005?`Pays ${fmt(-b)}`:'All settled';
-  return `<div class="card person"><div class="row"><div class="row" style="justify-content:flex-start"><div class="av">${ini(p)}</div><span class="nm">${p}</span></div>
+  return `<div class="card person"><div class="row"><div class="row" style="justify-content:flex-start"><div class="av">${ini(p)}</div><span><span class="nm">${p}</span><div class="mute">${(T.fullNames||{})[p]||""}</div></span></div>
     <span class="badge ${cls}">${txt}</span></div>
     <div class="mini"><div class="mute">Paid<b>${fmt(paid[p])}</b></div><div class="mute">Share of expenses<b>${fmt(share[p])}</b></div></div></div>`}).join('');
 
 const payers = [...new Set(tx.map(t=>t.from))];
 $('s-settle').innerHTML = `
-  <div class="card"><div class="row"><div><div class="mute">Per head</div><div class="stat"><div class="v">${fmt(perHead)}</div></div></div>
-  <div style="text-align:right"><div class="mute">Total</div><div class="stat"><div class="v">${fmt(total)}</div></div></div></div></div>
+  <div class="card"><div class="row"><div><div class="mute">Per head (excl. flights)</div><div class="stat"><div class="v">${fmt(perHead)}</div></div></div>
+  <div style="text-align:right"><div class="mute">Trip spends</div><div class="stat"><div class="v">${fmt(tripSpend)}</div></div></div></div></div>
   <h2>Who pays whom</h2>
   ${payers.map(f=>{const mine=tx.filter(t=>t.from===f);return `<div class="card group"><div class="row"><div class="row" style="justify-content:flex-start"><div class="av">${ini(f)}</div><h3 style="margin:0">${f}</h3></div>
     <span class="badge pay">Pays ${fmt(mine.reduce((s,t)=>s+t.a,0))}</span></div>
